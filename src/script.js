@@ -3,6 +3,8 @@ import gsap from "gsap";
 import * as lil from "lil-gui";
 import "./style.css";
 import imageSource from "../static/color.jpg";
+import imageSource2 from "../static/ambientOcclusion.jpg";
+import imageSource3 from "../static/roughness.jpg";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 /**
@@ -34,8 +36,15 @@ loadingManager.onError = () => {
 };
 
 // const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load(imageSource);
-
+const texture = textureLoader.load(imageSource2);
+// texture.repeat.x = 2;
+// texture.repeat.y = 3;
+// texture.wrapS = THREE.RepeatWrapping;
+// texture.wrapT = THREE.RepeatWrapping;
+texture.rotation = Math.PI / 4;
+texture.center.x = 0.5;
+texture.center.y = 0.5;
+// texture.minFilter = THREE.NearestFilter;
 /**
  * 组
  */
@@ -43,8 +52,8 @@ const group = new THREE.Group();
 scene.add(group);
 
 const cube1 = new THREE.Mesh(
-  // new THREE.BoxGeometry(1, 1, 1, 2, 2, 2),
-  new THREE.SphereGeometry(1, 32, 32),
+  new THREE.BoxGeometry(1, 1, 1, 2, 2, 2),
+  // new THREE.SphereGeometry(1, 32, 32),
   new THREE.MeshBasicMaterial({ map: texture })
 );
 
