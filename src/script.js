@@ -10,6 +10,7 @@ import ambientOcclusion from "../static/ambientOcclusion.jpg";
 import height from "../static/height.png";
 import roughness from "../static/roughness.jpg";
 import metalness from "../static/metalness.jpg";
+import normal from "../static/normal.jpg";
 import matcaps from "../static/1.jpg";
 import gradients from "../static/3.jpg";
 /**
@@ -22,8 +23,8 @@ const scene = new THREE.Scene();
  */
 const gui = new lil.GUI();
 const defaultSet = {
-  metalness: 0.65,
-  roughness: 0.45,
+  metalness: 0,
+  roughness: 1,
 };
 /**
  * 材质
@@ -37,6 +38,7 @@ const doorMetalnessTexture = textureLoader.load(metalness);
 const doorRoughnessTexture = textureLoader.load(roughness);
 const matcapTexture = textureLoader.load(matcaps);
 const gradientTexture = textureLoader.load(gradients);
+const normalimg = textureLoader.load(normal);
 /**
  * 对象
  */
@@ -51,22 +53,38 @@ const gradientTexture = textureLoader.load(gradients);
 const material = new THREE.MeshStandardMaterial({
   metalness: defaultSet.metalness,
   roughness: defaultSet.roughness,
+  metalnessMap: doorMetalnessTexture,
+  roughnessMap: doorRoughnessTexture,
   map: doorColorTexture,
+  aoMap: doorAmbientOcclusionTexture,
+  aoMapIntensity: 1,
+  displacementMap: doorHeightTexture,
+  normalMap: normalimg,
+  normalScale: new THREE.Vector2(0.5, 0.5),
+  displacementScale: 0.05,
+  alphaMap: doorAlphaTexture,
+  transparent: true,
 });
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material);
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material);
 sphere.position.x = -1.5;
 
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+console.log(sphere.geometry.attributes);
+sphere.geometry.setAttribute(
+  "uv2",
+  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
+);
+
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 100, 100), material);
 
 const torus = new THREE.Mesh(
-  new THREE.TorusGeometry(0.3, 0.2, 16, 32),
+  new THREE.TorusGeometry(0.3, 0.2, 64, 128),
   material
 );
 torus.position.x = 1.5;
 
 gui.add(material, "metalness").min(0).max(1).step(0.001).name("金属度");
 gui.add(material, "roughness").min(0).max(1).step(0.001).name("粗糙度");
-
+gui.add(material, "aoMapIntensity").min(0).max(1).name("遮挡贴图透明度");
 scene.add(sphere, plane, torus);
 /**
  * 灯光
@@ -74,7 +92,7 @@ scene.add(sphere, plane, torus);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const pointLight = new THREE.PointLight(0xffffff, 100);
+const pointLight = new THREE.PointLight(0xffffff, 55);
 pointLight.position.x = 2;
 pointLight.position.y = 3;
 pointLight.position.z = 4;
@@ -125,7 +143,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.set(0, 0, 3);
-camera.lookAt(sphere.position);
+// camera.lookAt(sphere.position);
 scene.add(camera);
 
 /**
