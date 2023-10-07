@@ -2,87 +2,83 @@ import * as THREE from "three";
 import gsap from "gsap";
 import * as lil from "lil-gui";
 import "./style.css";
-import imageSource from "../static/color.jpg";
-import imageSource2 from "../static/ambientOcclusion.jpg";
-import imageSource3 from "../static/roughness.jpg";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import color from "../static/color.jpg";
+import alpha from "../static/alpha.jpg";
+import ambientOcclusion from "../static/ambientOcclusion.jpg";
+import height from "../static/height.png";
+import roughness from "../static/roughness.jpg";
+import metalness from "../static/metalness.jpg";
+import matcaps from "../static/1.jpg";
+import gradients from "../static/3.jpg";
 /**
  * 基础
  */
 const canvas = document.querySelector("#webgl");
 const scene = new THREE.Scene();
-// 调试器配置
-const parameters = {
-  color: 0xff0000,
-  spin: () => {
-    gsap.to(cube1.rotation, { duration: 3, y: cube1.rotation.y + 10 });
-  },
-};
-//纹理配置
-const loadingManager = new THREE.LoadingManager();
-const textureLoader = new THREE.TextureLoader(loadingManager);
-loadingManager.onStart = () => {
-  console.log("loading started");
-};
-loadingManager.onLoad = () => {
-  console.log("loading finished");
-};
-loadingManager.onProgress = () => {
-  console.log("loading progressing");
-};
-loadingManager.onError = () => {
-  console.log("loading error");
-};
-
-// const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load(imageSource2);
-// texture.repeat.x = 2;
-// texture.repeat.y = 3;
-// texture.wrapS = THREE.RepeatWrapping;
-// texture.wrapT = THREE.RepeatWrapping;
-texture.rotation = Math.PI / 4;
-texture.center.x = 0.5;
-texture.center.y = 0.5;
-// texture.minFilter = THREE.NearestFilter;
-/**
- * 组
- */
-const group = new THREE.Group();
-scene.add(group);
-
-const cube1 = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1, 2, 2, 2),
-  // new THREE.SphereGeometry(1, 32, 32),
-  new THREE.MeshBasicMaterial({ map: texture })
-);
-
-//自己创建顶点
-// const geometry = new THREE.BufferGeometry();
-
-// const positionsArray = new Float32Array([0, 0, 0, 0, 1, 0, 1, 0, 0]);
-// const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3);
-// geometry.setAttribute("position", positionsAttribute);
-// const cube1 = new THREE.Mesh(
-//   geometry,
-//   new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
-// );
-group.add(cube1);
 /**
  * 调试器
  */
 const gui = new lil.GUI();
-gui.add(cube1.position, "y").min(-1).max(1).step(0.01).name("物体Y值");
-gui.add(cube1, "visible").name("物体是否可见");
-gui.add(cube1.material, "wireframe").name("物体模式");
+const defaultSet = {
+  metalness: 0.65,
+  roughness: 0.45,
+};
+/**
+ * 材质
+ */
+const textureLoader = new THREE.TextureLoader();
+const doorColorTexture = textureLoader.load(color);
+const doorAlphaTexture = textureLoader.load(alpha);
+const doorAmbientOcclusionTexture = textureLoader.load(ambientOcclusion);
+const doorHeightTexture = textureLoader.load(height);
+const doorMetalnessTexture = textureLoader.load(metalness);
+const doorRoughnessTexture = textureLoader.load(roughness);
+const matcapTexture = textureLoader.load(matcaps);
+const gradientTexture = textureLoader.load(gradients);
+/**
+ * 对象
+ */
+// const material = new THREE.MeshBasicMaterial({ map: matcapTexture });
+// const material = new THREE.MeshNormalMaterial();
+// const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+// const material = new THREE.MeshLambertMaterial();
+// const material = new THREE.MeshPhongMaterial();
+// material.shininess = 100;
+// material.specular = new THREE.Color(0x1188ff);
+// const material = new THREE.MeshToonMaterial();
+const material = new THREE.MeshStandardMaterial({
+  metalness: defaultSet.metalness,
+  roughness: defaultSet.roughness,
+  map: doorColorTexture,
+});
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material);
+sphere.position.x = -1.5;
 
-gui
-  .addColor(parameters, "color")
-  .name("物体颜色")
-  .onChange(() => {
-    cube1.material.color.set(parameters.color);
-  });
-gui.add(parameters, "spin");
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+
+const torus = new THREE.Mesh(
+  new THREE.TorusGeometry(0.3, 0.2, 16, 32),
+  material
+);
+torus.position.x = 1.5;
+
+gui.add(material, "metalness").min(0).max(1).step(0.001).name("金属度");
+gui.add(material, "roughness").min(0).max(1).step(0.001).name("粗糙度");
+
+scene.add(sphere, plane, torus);
+/**
+ * 灯光
+ */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+const pointLight = new THREE.PointLight(0xffffff, 100);
+pointLight.position.x = 2;
+pointLight.position.y = 3;
+pointLight.position.z = 4;
+scene.add(pointLight);
 /**
  * 鼠标事件
  */
@@ -129,7 +125,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.set(0, 0, 3);
-camera.lookAt(cube1.position);
+camera.lookAt(sphere.position);
 scene.add(camera);
 
 /**
@@ -158,7 +154,16 @@ window.addEventListener("resize", () => {
  */
 const control = new OrbitControls(camera, canvas);
 control.enableDamping = true;
+const clock = new THREE.Clock();
 const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+  sphere.rotation.y = 0.1 * elapsedTime;
+  plane.rotation.y = 0.1 * elapsedTime;
+  torus.rotation.y = 0.1 * elapsedTime;
+
+  sphere.rotation.x = 0.15 * elapsedTime;
+  plane.rotation.x = 0.15 * elapsedTime;
+  torus.rotation.x = 0.15 * elapsedTime;
   control.update();
   renderer.render(scene, camera);
   window.requestAnimationFrame(tick);
