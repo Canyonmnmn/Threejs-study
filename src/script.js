@@ -2,7 +2,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import * as lil from "lil-gui";
 import "./style.css";
-
+THREE.ColorManagement.enabled = false;
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import color from "../static/color.jpg";
 import alpha from "../static/alpha.jpg";
@@ -64,6 +64,9 @@ const material = new THREE.MeshStandardMaterial({
   displacementScale: 0.05,
   alphaMap: doorAlphaTexture,
   transparent: true,
+  // color: "#ff0000",
+  // transparent: true,
+  // opacity: 0.5,
 });
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material);
 sphere.position.x = -1.5;
@@ -85,14 +88,16 @@ torus.position.x = 1.5;
 gui.add(material, "metalness").min(0).max(1).step(0.001).name("金属度");
 gui.add(material, "roughness").min(0).max(1).step(0.001).name("粗糙度");
 gui.add(material, "aoMapIntensity").min(0).max(1).name("遮挡贴图透明度");
+gui.add(material, "displacementScale").min(0).max(1).step(0.001).name("起伏");
+
 scene.add(sphere, plane, torus);
 /**
  * 灯光
  */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 2);
 scene.add(ambientLight);
 
-const pointLight = new THREE.PointLight(0xffffff, 55);
+const pointLight = new THREE.PointLight(0xffffff, 12);
 pointLight.position.x = 2;
 pointLight.position.y = 3;
 pointLight.position.z = 4;
@@ -142,7 +147,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(0, 0, 3);
+camera.position.set(1, 1, 2);
 // camera.lookAt(sphere.position);
 scene.add(camera);
 
@@ -174,14 +179,14 @@ const control = new OrbitControls(camera, canvas);
 control.enableDamping = true;
 const clock = new THREE.Clock();
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
-  sphere.rotation.y = 0.1 * elapsedTime;
-  plane.rotation.y = 0.1 * elapsedTime;
-  torus.rotation.y = 0.1 * elapsedTime;
+  // const elapsedTime = clock.getElapsedTime();
+  // sphere.rotation.y = 0.1 * elapsedTime;
+  // plane.rotation.y = 0.1 * elapsedTime;
+  // torus.rotation.y = 0.1 * elapsedTime;
 
-  sphere.rotation.x = 0.15 * elapsedTime;
-  plane.rotation.x = 0.15 * elapsedTime;
-  torus.rotation.x = 0.15 * elapsedTime;
+  // sphere.rotation.x = 0.15 * elapsedTime;
+  // plane.rotation.x = 0.15 * elapsedTime;
+  // torus.rotation.x = 0.15 * elapsedTime;
   control.update();
   renderer.render(scene, camera);
   window.requestAnimationFrame(tick);
