@@ -2,17 +2,10 @@ import * as THREE from "three";
 import gsap from "gsap";
 import * as lil from "lil-gui";
 import "./style.css";
-THREE.ColorManagement.enabled = false;
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import color from "../static/color.jpg";
-import alpha from "../static/alpha.jpg";
-import ambientOcclusion from "../static/ambientOcclusion.jpg";
-import height from "../static/height.png";
-import roughness from "../static/roughness.jpg";
-import metalness from "../static/metalness.jpg";
-import normal from "../static/normal.jpg";
-import matcaps from "../static/1.jpg";
-import gradients from "../static/3.jpg";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import matcapIMG from "../static/8.png";
 /**
  * 基础
  */
@@ -22,86 +15,58 @@ const scene = new THREE.Scene();
  * 调试器
  */
 const gui = new lil.GUI();
-const defaultSet = {
-  metalness: 0,
-  roughness: 1,
-};
+
 /**
- * 材质
+ * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
-const doorColorTexture = textureLoader.load(color);
-const doorAlphaTexture = textureLoader.load(alpha);
-const doorAmbientOcclusionTexture = textureLoader.load(ambientOcclusion);
-const doorHeightTexture = textureLoader.load(height);
-const doorMetalnessTexture = textureLoader.load(metalness);
-const doorRoughnessTexture = textureLoader.load(roughness);
-const matcapTexture = textureLoader.load(matcaps);
-const gradientTexture = textureLoader.load(gradients);
-const normalimg = textureLoader.load(normal);
+const matcapTexture = textureLoader.load(matcapIMG);
 /**
- * 对象
+ * 字体
  */
-// const material = new THREE.MeshBasicMaterial({ map: matcapTexture });
-// const material = new THREE.MeshNormalMaterial();
-// const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
-// const material = new THREE.MeshLambertMaterial();
-// const material = new THREE.MeshPhongMaterial();
-// material.shininess = 100;
-// material.specular = new THREE.Color(0x1188ff);
-// const material = new THREE.MeshToonMaterial();
-const material = new THREE.MeshStandardMaterial({
-  metalness: defaultSet.metalness,
-  roughness: defaultSet.roughness,
-  metalnessMap: doorMetalnessTexture,
-  roughnessMap: doorRoughnessTexture,
-  map: doorColorTexture,
-  aoMap: doorAmbientOcclusionTexture,
-  aoMapIntensity: 1,
-  displacementMap: doorHeightTexture,
-  normalMap: normalimg,
-  normalScale: new THREE.Vector2(0.5, 0.5),
-  displacementScale: 0.05,
-  alphaMap: doorAlphaTexture,
-  transparent: true,
-  // color: "#ff0000",
-  // transparent: true,
-  // opacity: 0.5,
+const fontLoader = new FontLoader();
+fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+  console.log("字体加载完毕");
+  const textGeometry = new TextGeometry("Hello THREEJS!", {
+    font: font,
+    size: 0.5,
+    height: 0.2,
+    curveSegments: 6,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.02,
+    bevelOffset: 0,
+    bevelSegments: 4,
+  });
+  // textGeometry.computeBoundingBox();
+
+  // textGeometry.translate(
+  //   -(textGeometry.boundingBox.max.x - 0.02) / 2,
+  //   -(textGeometry.boundingBox.max.y - 0.02) / 2,
+  //   -(textGeometry.boundingBox.max.z - 0.03) / 2
+  // );
+  // console.log(textGeometry.boundingBox);
+  textGeometry.center();
+  const matrial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+  const text = new THREE.Mesh(textGeometry, matrial);
+  scene.add(text);
+  const donutGeometry = new THREE.TorusGeometry(0.2, 0.1, 20, 45);
+
+  for (let i = 0; i < 300; i++) {
+    const donut = new THREE.Mesh(donutGeometry, matrial);
+
+    donut.position.x = (Math.random() - 0.5) * 10;
+    donut.position.y = (Math.random() - 0.5) * 10;
+    donut.position.z = (Math.random() - 0.5) * 10;
+
+    donut.rotation.x = Math.random() * Math.PI;
+    donut.rotation.y = Math.random() * Math.PI;
+
+    const scale = Math.random();
+    donut.scale.set(scale, scale, scale);
+    scene.add(donut);
+  }
 });
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material);
-sphere.position.x = -1.5;
-
-console.log(sphere.geometry.attributes);
-sphere.geometry.setAttribute(
-  "uv2",
-  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
-);
-
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 100, 100), material);
-
-const torus = new THREE.Mesh(
-  new THREE.TorusGeometry(0.3, 0.2, 64, 128),
-  material
-);
-torus.position.x = 1.5;
-
-gui.add(material, "metalness").min(0).max(1).step(0.001).name("金属度");
-gui.add(material, "roughness").min(0).max(1).step(0.001).name("粗糙度");
-gui.add(material, "aoMapIntensity").min(0).max(1).name("遮挡贴图透明度");
-gui.add(material, "displacementScale").min(0).max(1).step(0.001).name("起伏");
-
-scene.add(sphere, plane, torus);
-/**
- * 灯光
- */
-const ambientLight = new THREE.AmbientLight(0xffffff, 2);
-scene.add(ambientLight);
-
-const pointLight = new THREE.PointLight(0xffffff, 12);
-pointLight.position.x = 2;
-pointLight.position.y = 3;
-pointLight.position.z = 4;
-scene.add(pointLight);
 /**
  * 鼠标事件
  */
@@ -148,7 +113,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.set(1, 1, 2);
-// camera.lookAt(sphere.position);
+// camera.lookAt(cube.position);
 scene.add(camera);
 
 /**
@@ -179,14 +144,6 @@ const control = new OrbitControls(camera, canvas);
 control.enableDamping = true;
 const clock = new THREE.Clock();
 const tick = () => {
-  // const elapsedTime = clock.getElapsedTime();
-  // sphere.rotation.y = 0.1 * elapsedTime;
-  // plane.rotation.y = 0.1 * elapsedTime;
-  // torus.rotation.y = 0.1 * elapsedTime;
-
-  // sphere.rotation.x = 0.15 * elapsedTime;
-  // plane.rotation.x = 0.15 * elapsedTime;
-  // torus.rotation.x = 0.15 * elapsedTime;
   control.update();
   renderer.render(scene, camera);
   window.requestAnimationFrame(tick);
