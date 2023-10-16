@@ -19,54 +19,26 @@ const gui = new lil.GUI();
 /**
  * 纹理
  */
-const textureLoader = new THREE.TextureLoader();
-const matcapTexture = textureLoader.load(matcapIMG);
+const material = new THREE.MeshStandardMaterial();
+material.roughness = 0.2;
 /**
- * 字体
+ * 对象
  */
-const fontLoader = new FontLoader();
-fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
-  console.log("字体加载完毕");
-  const textGeometry = new TextGeometry("Hello THREEJS!", {
-    font: font,
-    size: 0.5,
-    height: 0.2,
-    curveSegments: 6,
-    bevelEnabled: true,
-    bevelThickness: 0.03,
-    bevelSize: 0.02,
-    bevelOffset: 0,
-    bevelSegments: 4,
-  });
-  // textGeometry.computeBoundingBox();
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
+sphere.position.x = -1.5;
 
-  // textGeometry.translate(
-  //   -(textGeometry.boundingBox.max.x - 0.02) / 2,
-  //   -(textGeometry.boundingBox.max.y - 0.02) / 2,
-  //   -(textGeometry.boundingBox.max.z - 0.03) / 2
-  // );
-  // console.log(textGeometry.boundingBox);
-  textGeometry.center();
-  const matrial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
-  const text = new THREE.Mesh(textGeometry, matrial);
-  scene.add(text);
-  const donutGeometry = new THREE.TorusGeometry(0.2, 0.1, 20, 45);
+const cube = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.75), material);
 
-  for (let i = 0; i < 300; i++) {
-    const donut = new THREE.Mesh(donutGeometry, matrial);
+const torus = new THREE.Mesh(
+  new THREE.TorusGeometry(0.3, 0.2, 32, 64),
+  material
+);
+torus.position.x = 1.5;
 
-    donut.position.x = (Math.random() - 0.5) * 10;
-    donut.position.y = (Math.random() - 0.5) * 10;
-    donut.position.z = (Math.random() - 0.5) * 10;
-
-    donut.rotation.x = Math.random() * Math.PI;
-    donut.rotation.y = Math.random() * Math.PI;
-
-    const scale = Math.random();
-    donut.scale.set(scale, scale, scale);
-    scene.add(donut);
-  }
-});
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material);
+plane.rotation.x = -Math.PI * 0.5;
+plane.position.y = -0.65;
+scene.add(sphere, cube, torus, plane);
 /**
  * 鼠标事件
  */
@@ -115,7 +87,34 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(1, 1, 2);
 // camera.lookAt(cube.position);
 scene.add(camera);
+/**
+ * 灯
+ */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
 
+const directionLight = new THREE.DirectionalLight(0x00fffc, 0.3);
+directionLight.position.set(1, 0.25, 0);
+scene.add(directionLight);
+
+const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 0.3);
+
+scene.add(hemisphereLight);
+
+const pointLight = new THREE.PointLight(0xff9000, 0.5, 2);
+pointLight.position.set(1, -0.5, 1);
+scene.add(pointLight);
+
+const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 2, 1, 1);
+scene.add(rectAreaLight);
+const spotLight = new THREE.SpotLight(0x78ff00, 5, 10, Math.PI * 0.1, 0.25, 1);
+spotLight.position.set(0, 2, 3);
+scene.add(spotLight);
+/**
+ * helper
+ */
+const ambientLightHelper = new THREE.SpotLightHelper(spotLight);
+scene.add(ambientLightHelper);
 /**
  * 渲染器
  */
