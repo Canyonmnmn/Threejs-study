@@ -25,8 +25,38 @@ material.roughness = 0.7;
 /**
  * 对象
  */
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
-sphere.castShadow = true;
+// 房子
+const house = new THREE.Group();
+scene.add(house);
+// 房子的墙
+const walls = new THREE.Mesh(
+  new THREE.BoxGeometry(4, 2.5, 4),
+  new THREE.MeshStandardMaterial({ color: "#ac8e82" })
+);
+walls.position.y = 1.25;
+//房子的顶
+const roof = new THREE.Mesh(
+  new THREE.ConeGeometry(3.5, 1, 4),
+  new THREE.MeshStandardMaterial({ color: "#b35f45" })
+);
+roof.position.y = 3;
+roof.rotation.y = Math.PI * 0.25;
+//房子的门
+const door = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.MeshStandardMaterial({ color: "#aa7b7b" })
+);
+door.position.z = 2.001;
+door.position.y = 1;
+house.add(walls, roof, door);
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 20),
+  new THREE.MeshBasicMaterial({ color: "#a9c388" })
+);
+floor.position.y = 0;
+floor.rotation.x = -Math.PI * 0.5;
+scene.add(floor);
 
 /**
  * 鼠标事件
@@ -79,9 +109,18 @@ scene.add(camera);
 /**
  * 灯
  */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
 gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
 scene.add(ambientLight);
+
+// Directional light
+const moonLight = new THREE.DirectionalLight("#ffffff", 0.5);
+moonLight.position.set(4, 5, -2);
+gui.add(moonLight, "intensity").min(0).max(1).step(0.001);
+gui.add(moonLight.position, "x").min(-5).max(5).step(0.001);
+gui.add(moonLight.position, "y").min(-5).max(5).step(0.001);
+gui.add(moonLight.position, "z").min(-5).max(5).step(0.001);
+scene.add(moonLight);
 
 /**
  * 渲染器
