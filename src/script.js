@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as lil from "lil-gui";
 import "./style.css";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import particle from "../static/textures/particles/2.png";
 
 /**
  * 基础
@@ -17,6 +18,7 @@ const gui = new lil.GUI();
  * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
+const particleTexture = textureLoader.load(particle);
 /**
  * 材质
  */
@@ -25,12 +27,36 @@ material.roughness = 0.7;
 /**
  * 对象
  */
-// 房子
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(3, 3, 3),
-  new THREE.MeshBasicMaterial({ color: "#ffffff" })
+//geometry
+
+const particlesGeometry = new THREE.BufferGeometry();
+const count = 20000;
+const positions = new Float32Array(count * 3);
+const colors = new Float32Array(count * 3);
+for (let i = 0; i < count; i++) {
+  positions[i] = (Math.random() - 0.5) * 5;
+  colors[i] = Math.random();
+}
+particlesGeometry.setAttribute(
+  "position",
+  new THREE.BufferAttribute(positions, 3)
 );
-scene.add(cube);
+particlesGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+const particlesMatrial = new THREE.PointsMaterial({
+  size: 0.1,
+  sizeAttenuation: true,
+  // color: "#ff88cc",
+  transparent: true,
+  alphaMap: particleTexture,
+  // alphaTest: 0.01,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  vertexColors: true,
+});
+
+const particles = new THREE.Points(particlesGeometry, particlesMatrial);
+scene.add(particles);
 /**
  * 鼠标事件
  */
@@ -76,7 +102,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(1, 2, 7);
+camera.position.set(1, 2, 5);
 // camera.lookAt(cube.position);
 scene.add(camera);
 /**
