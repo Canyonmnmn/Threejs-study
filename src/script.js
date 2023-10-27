@@ -1,148 +1,93 @@
 import * as THREE from "three";
 import * as lil from "lil-gui";
 import "./style.css";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import particle from "../static/textures/particles/2.png";
+import gradientImg from "../static/textures/gradient/3.jpg";
+import { gsap } from "gsap";
 
 /**
  * 基础
  */
 const canvas = document.querySelector("#webgl");
 const scene = new THREE.Scene();
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
 
 /**
  * 调试器
  */
 const gui = new lil.GUI();
+const parameters = {};
+parameters.color = "#ffeded";
+
+gui.addColor(parameters, "color").onChange(() => {
+  material.color.set(parameters.color);
+});
 /**
  * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
+const gradientTexture = textureLoader.load(gradientImg);
+gradientTexture.magFilter = THREE.NearestFilter;
 /**
  * 对象
  */
-const parameters = {};
-parameters.count = 100000;
-parameters.size = 0.01;
-parameters.radius = 5;
-parameters.branches = 3;
-parameters.spin = 1;
-parameters.randomness = 0.2;
-parameters.randomnessPow = 3;
-parameters.insetColor = "#ff6030";
-parameters.outsideColor = "#1b3984";
+const objectDistance = 6;
 
-let geometry = null;
-let material = null;
-let points = null;
-const generateGalaxy = () => {
-  if (points !== null) {
-    geometry.dispose();
-    material.dispose();
-    scene.remove(points);
-  }
-  geometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(parameters.count * 3);
-  const colors = new Float32Array(parameters.count * 3);
+const material = new THREE.MeshToonMaterial({
+  color: parameters.color,
+  gradientMap: gradientTexture,
+});
 
-  const insetColor = new THREE.Color(parameters.insetColor);
-  const outsideColor = new THREE.Color(parameters.outsideColor);
+const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
+const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
+const mesh3 = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
+  material
+);
+mesh1.position.y = 0;
+mesh2.position.y = -objectDistance * 1;
+mesh3.position.y = -objectDistance * 2;
 
-  for (let i = 0; i <= parameters.count; i++) {
-    const i3 = i * 3;
+mesh1.position.x = 3;
+mesh2.position.x = -3;
+mesh3.position.x = 3;
 
-    const radius = Math.random() * parameters.radius;
-    const spinAngle = radius * parameters.spin;
-    const branchAngle =
-      ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+scene.add(mesh1, mesh2, mesh3);
+const meshArray = [mesh1, mesh2, mesh3];
+//粒子
+const count = 200;
+const particlesGeometry = new THREE.BufferGeometry();
+const particlesMaterial = new THREE.PointsMaterial({
+  sizeAttenuation: true,
+  size: 0.03,
+  color: parameters.color,
+});
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
 
-    const mixcolor = insetColor.clone();
-    mixcolor.lerp(outsideColor, radius / parameters.radius);
+const positions = new Float32Array(count * 3);
+for (let i = 0; i < count; i++) {
+  const i3 = i * 3;
+  positions[i3 + 0] = (Math.random() - 0.5) * 10;
+  positions[i3 + 1] = (Math.random() - 0.5) * 30;
+  positions[i3 + 2] = Math.random() * 3;
+}
+particlesGeometry.setAttribute(
+  "position",
+  new THREE.BufferAttribute(positions, 3)
+);
+scene.add(particles);
 
-    const randomX =
-      Math.pow(Math.random(), parameters.randomnessPow) *
-      (Math.random() < 0.5 ? 1 : -1) *
-      parameters.randomness *
-      radius;
-    const randomY =
-      Math.pow(Math.random(), parameters.randomnessPow) *
-      (Math.random() < 0.5 ? 1 : -1) *
-      parameters.randomness *
-      radius;
-    const randomZ =
-      Math.pow(Math.random(), parameters.randomnessPow) *
-      (Math.random() < 0.5 ? 1 : -1) *
-      parameters.randomness *
-      radius;
+/**
+ * 灯光
+ */
+const light = new THREE.DirectionalLight("#ffffff", 1);
+light.position.set(1, 1, 0);
+scene.add(light);
 
-    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
-    positions[i3 + 1] = randomY;
-    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
-
-    colors[i3] = mixcolor.r;
-    colors[i3 + 1] = mixcolor.g;
-    colors[i3 + 2] = mixcolor.b;
-  }
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  material = new THREE.PointsMaterial({
-    size: parameters.size,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    sizeAttenuation: true,
-    vertexColors: true,
-  });
-  points = new THREE.Points(geometry, material);
-  scene.add(points);
-};
-generateGalaxy();
-gui
-  .add(parameters, "count")
-  .min(100)
-  .max(1000000)
-  .step(100)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "size")
-  .min(0.001)
-  .max(0.1)
-  .step(0.001)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "radius")
-  .min(0)
-  .max(20)
-  .step(1)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "branches")
-  .min(1)
-  .max(20)
-  .step(1)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "spin")
-  .min(-5)
-  .max(5)
-  .step(0.01)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "randomness")
-  .min(0)
-  .max(2)
-  .step(0.001)
-  .onFinishChange(generateGalaxy);
-gui
-  .add(parameters, "randomnessPow")
-  .min(1)
-  .max(10)
-  .step(0.001)
-  .onFinishChange(generateGalaxy);
-
-gui.addColor(parameters, "insetColor").onFinishChange(generateGalaxy);
-
-gui.addColor(parameters, "outsideColor").onFinishChange(generateGalaxy);
-
+const directionalLightHelper = new THREE.DirectionalLightHelper(light, 0.2);
+scene.add(directionalLightHelper);
 /**
  * 鼠标事件
  */
@@ -153,7 +98,6 @@ const cursor = {
 window.addEventListener("mousemove", (event) => {
   cursor.x = event.clientX / sizes.width - 0.5;
   cursor.y = event.clientY / sizes.height - 0.5;
-  // console.log(cursor);
 });
 //双击全屏
 window.addEventListener("dblclick", () => {
@@ -178,25 +122,43 @@ window.addEventListener("dblclick", () => {
 /**
  * 相机
  */
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
+const cameraGroup = new THREE.Group();
+
 const camera = new THREE.PerspectiveCamera(
   75,
   sizes.width / sizes.height,
   0.1,
   100
 );
-camera.position.set(1, 2, 5);
-scene.add(camera);
-
+camera.position.set(0, 0, 5);
+cameraGroup.add(camera);
+scene.add(cameraGroup);
+/**
+ * 滚动
+ */
+let scrollY = window.scrollY;
+let currentPage = 0;
+window.addEventListener("scroll", () => {
+  scrollY = window.scrollY;
+  const page = Math.round(scrollY / sizes.height);
+  if (page != currentPage) {
+    currentPage = page;
+    gsap.to(meshArray[currentPage].rotation, {
+      duration: 1.5,
+      ease: "power2.inOut",
+      x: "+=6",
+      y: "+=3",
+      z: "+=1.5",
+    });
+  }
+});
 /**
  * 渲染器
  */
 
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  alpha: true,
 });
 
 renderer.setSize(sizes.width, sizes.height);
@@ -217,13 +179,22 @@ window.addEventListener("resize", () => {
 /**
  * 内置控制
  */
-const control = new OrbitControls(camera, canvas);
-control.enableDamping = true;
 const clock = new THREE.Clock();
+let previousTime = 0;
 const tick = () => {
   const time = clock.getElapsedTime();
+  const deltaTime = time - previousTime;
+  previousTime = time;
+  camera.position.y = (-scrollY / sizes.height) * objectDistance;
 
-  control.update();
+  cameraGroup.position.x += (cursor.x - cameraGroup.position.x) * 2 * deltaTime;
+  cameraGroup.position.y +=
+    (-cursor.y - cameraGroup.position.y) * 2 * deltaTime;
+
+  for (const item of meshArray) {
+    item.rotation.x += deltaTime * 0.1;
+    item.rotation.y += deltaTime * 0.2;
+  }
   renderer.render(scene, camera);
   window.requestAnimationFrame(tick);
 };
