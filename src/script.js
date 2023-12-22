@@ -9,13 +9,15 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
  */
 const gltfLoader = new GLTFLoader();
 const rgbeLoader = new RGBELoader();
+const cubeTextureLoader = new THREE.CubeTextureLoader();
 
 /**
  * Base
  */
 // Debug
 const gui = new GUI();
-const global = {};
+const debugObject = {};
+debugObject.envMapIntensity = 2.5;
 
 // Canvas
 const canvas = document.querySelector("#webgl");
@@ -30,7 +32,7 @@ const testSphere = new THREE.Mesh(
   new THREE.SphereGeometry(1, 32, 32),
   new THREE.MeshStandardMaterial()
 );
-scene.add(testSphere);
+// scene.add(testSphere);
 /**
  * lights
  */
@@ -41,6 +43,55 @@ gui.add(directLight, "intensity").min(0).max(10).step(0.001).name("单向光");
 gui.add(directLight.position, "x").min(-5).max(5).step(0.001).name("lightX");
 gui.add(directLight.position, "y").min(-5).max(5).step(0.001).name("lightY");
 gui.add(directLight.position, "z").min(-5).max(5).step(0.001).name("lightZ");
+
+/**
+ * models
+ */
+const updateAllMaterials = () => {
+  scene.traverse((child) => {
+    if (
+      child instanceof THREE.Mesh &&
+      child.material instanceof THREE.MeshStandardMaterial
+    ) {
+      child.material.envMap = environmentMap;
+      child.material.envMapIntensity = debugObject.envMapIntensity;
+    }
+  });
+};
+gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
+  console.log(gltf);
+  gltf.scene.scale.set(10, 10, 10);
+  gltf.scene.position.set(0, -4, 0);
+  gltf.scene.rotation.y = Math.PI * 0.5;
+  scene.add(gltf.scene);
+
+  gui
+    .add(gltf.scene.rotation, "y")
+    .min(-Math.PI)
+    .max(Math.PI)
+    .step(0.001)
+    .name("rotation");
+  updateAllMaterials();
+});
+gui
+  .add(debugObject, "envMapIntensity")
+  .min(0)
+  .max(10)
+  .step(0.001)
+  .onChange(updateAllMaterials);
+/**
+ * envirnment map
+ */
+const environmentMap = cubeTextureLoader.load([
+  "/environmentMaps/0/px.png",
+  "/environmentMaps/0/nx.png",
+  "/environmentMaps/0/py.png",
+  "/environmentMaps/0/ny.png",
+  "/environmentMaps/0/pz.png",
+  "/environmentMaps/0/nz.png",
+]);
+environmentMap.colorSpace = THREE.SRGBColorSpace;
+scene.background = environmentMap;
 /**
  * Sizes
  */
@@ -73,12 +124,12 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(3, 12, 3);
+camera.position.set(10, 8, 10);
 scene.add(camera);
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
-controls.target.y = 3.5;
+// controls.target.y = 2.5;
 controls.enableDamping = true;
 
 /**
@@ -90,6 +141,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.physicallyCorrectLights = true;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 /**
  * Animate
